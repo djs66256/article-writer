@@ -44,12 +44,20 @@ class WWDCSpider(scrapy.Spider):
             } for related_video_info in related_videos_info]
             data["related_videos"] = related_videos
 
+        documents = response.css('.links .document')
+        if documents:
+            document_items = [{
+                'title': document.css('a::text').get(),
+                'url': response.urljoin(document.css('a::attr(href)').get())
+            } for document in documents]
+            data["documents"] = document_items
+
         transcript = response.css('.transcript')
         if transcript:
             transcript_items = [{
                 'start_time': transcript_item.css('::attr(data-start)').get()
                     or transcript_item.css('::attr(data-start-time)').get(),
-                'end_time': transcript_item.css('::attr(data-end-time)').get(),
+                # 'end_time': transcript_item.css('::attr(data-end-time)').get(),
                 'text': transcript_item.css('::text').get()
             } for transcript_item in transcript.css(".sentence")]
             data["transcript"] = transcript_items
