@@ -11,7 +11,6 @@ from typing import Any, Dict, TypedDict
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph
 
-
 class Configuration(TypedDict):
     """Configurable parameters for the agent.
 

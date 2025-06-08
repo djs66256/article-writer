@@ -1,9 +1,14 @@
 from os import path, remove
+import subprocess
 import json
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
-from scrapy_spider.spiders.wwdc import WWDCSpider
-from markdown_builder import build_wwdc_markdown
+if __name__ == "__main__":
+    from scrapy_spider.spiders.wwdc import WWDCSpider
+    from markdown_builder import build_wwdc_markdown
+else:
+    from .scrapy_spider.spiders.wwdc import WWDCSpider
+    from .markdown_builder import build_wwdc_markdown
 
 class WWDCTask:
     CURRENT_DIR = path.dirname(path.abspath(__file__))
@@ -34,10 +39,36 @@ class WWDCTask:
                 print(f"Error removing file {self.markdown_file_path}: {e}")
 
     def crawl(self):
+
+        command = [
+            "scrapy", "crawl", "wwdc",
+            "-a", f"wwdc={self.year}",
+            "-a", f"vid={self.video_id}",
+            "-o", self.crawl_file_path,
+            "--loglevel", "ERROR"
+        ]
+        res = subprocess.run(
+            command, 
+            cwd=self.CURRENT_DIR, 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, 
+            text=True)
+        if res.returncode != 0:
+            raise res.stderr
+        return
         settings = get_project_settings()
         settings.set('LOG_LEVEL', 'WARNING')
-        settings.set('FEED_FORMAT', 'jsonlines')
-        settings.set('FEED_URI', self.crawl_file_path)
+        settings.set('FEEDS', {
+            self.crawl_file_path: {  # 输出文件路径
+                'format': 'jsonlines',  # 输出格式（jsonlines, json, csv 等）
+                'encoding': 'utf8',     # 编码方式
+                'overwrite': True,      # 是否覆盖已有文件
+                'indent': 0             # JSON 缩进（可选）
+            }
+        })
+        # settings.set('FEED_FORMAT', 'jsonlines')
+        # settings.set('FEED_URI', self.crawl_file_path)
+        print(f"Crawling {self.year} {self.video_id}, writing to {self.crawl_file_path}")
         process = CrawlerProcess(settings)
         process.crawl(WWDCSpider, wwdc=self.year, vid=self.video_id)
         process.start()

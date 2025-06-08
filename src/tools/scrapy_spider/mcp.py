@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from typing import Annotated
 from pydantic import Field
-from tools.scrapy_spider.wwdc_task import WWDCTask
+from .wwdc_task import WWDCTask
 
 mcp = FastMCP("scrapy_spider")
 

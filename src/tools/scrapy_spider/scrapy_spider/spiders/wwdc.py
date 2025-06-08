@@ -71,21 +71,5 @@ class WWDCSpider(scrapy.Spider):
             } for sample_code in sample_codes.css(".sample-code-main-container")]
             data["sample_codes"] = sample_codes_items
 
-        print(json.dumps(data, indent=2, ensure_ascii=False))
+        # print(json.dumps(data, indent=2, ensure_ascii=False))
         yield data
-
-        return
-        # 提取WWDC视频链接
-        for video in response.css('section.video'):
-            yield {
-                'title': video.css('h3::text').get().strip(),
-                'url': response.urljoin(video.css('a::attr(href)').get()),
-                'description': video.css('p::text').get().strip(),
-                'date': video.css('time::attr(datetime)').get(),
-                'video_id': self.video_id
-            }
-        
-        # 跟进分页链接
-        next_page = response.css('a.next::attr(href)').get()
-        if next_page:
-            yield response.follow(next_page, self.parse)

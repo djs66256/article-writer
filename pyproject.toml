@@ -9,10 +9,14 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
+    "aiofiles>=24.1.0",
+    "httpx>=0.28.1",
+    "langchain-openai>=0.3.21",
     "langgraph>=0.2.6",
     "mcp>=1.9.3",
     "python-dotenv>=1.0.1",
     "scrapy>=2.13.1",
+    "socksio>=1.0.0",
 ]
 
 
@@ -62,6 +66,7 @@ dev = [
     "anyio>=4.7.0",
     "langgraph-cli[inmem]>=0.2.8",
     "mypy>=1.13.0",
+    "pip>=25.1.1",
     "pytest>=8.3.5",
     "ruff>=0.8.2",
 ]
