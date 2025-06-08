@@ -1,3 +1,6 @@
+import asyncio
+import aiofiles
+import os
 from typing import Any, Dict, TypedDict
 
 from langchain_core.runnables import RunnableConfig
@@ -5,7 +8,6 @@ from langgraph.graph import StateGraph
 from langgraph.prebuilt import create_react_agent
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-import asyncio
 
 from src.prompts import get_prompt, AgentType
 from src.tools.scrapy_spider.wwdc_task import WWDCTask
@@ -69,14 +71,30 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
     else:
         raise ValueError("No markdown content available for translation.")
 
+async def save_markdown(state: State, config: RunnableConfig):
+    currentdir = os.path.dirname(os.path.abspath(__file__))
+    year=config['configurable']["year"]
+    video_id=config['configurable']["video_id"]
+    outputdir = os.path.join(currentdir, '..', '..', 'output', 'wwdc', year)
+    if not os.path.exists(outputdir):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, os.makedirs, outputdir)
+    async with aiofiles.open(os.path.join(outputdir, f'{video_id}.md'), 'w') as f:
+        await f.write(state.markdown)
+
+    async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh.md'), 'w') as f:
+        await f.write(state.translated_markdown)
+
 
 graph = (
     StateGraph(State, config_schema=Configuration)
     .add_node(crawl_wwdc_markdown)
     .add_node(translate_markdown)
+    .add_node(save_markdown)
     .add_edge("__start__", "crawl_wwdc_markdown")
     .add_edge("crawl_wwdc_markdown", "translate_markdown")
-    .add_edge("translate_markdown", "__end__")
+    .add_edge("translate_markdown", "save_markdown")
+    .add_edge("save_markdown", "__end__")
     .compile(name="WWDC Translator Graph")
 )
 
