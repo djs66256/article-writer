@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from typing import Annotated
 from pydantic import Field
+from tools.scrapy_spider.wwdc_task import WWDCTask
 
 mcp = FastMCP("scrapy_spider")
 
@@ -10,6 +11,10 @@ def fetch_wwdc_video_detail(
     year: Annotated[str, Field(description="The year of the WWDC video")] = "2025",
     ) -> str:
     """Fetches the WWDC video detail information."""
+
+    task = WWDCTask(year, video_id)
+    return task.run()
+
 
 @mcp.tool
 def fetch_apple_document(

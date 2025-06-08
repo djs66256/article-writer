@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 from math import inf
-from markdown_builder import MarkdownBuilder
+from .MarkdownBuilder import MarkdownBuilder
 
 def _parse_float(value: str, default: float = 0) -> float:
     """
