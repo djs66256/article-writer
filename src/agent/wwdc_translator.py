@@ -56,13 +56,15 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
     
     if markdown := state.markdown:
         response = await agent.ainvoke({
-            "messages": [
-                {"role": "user", "content": markdown}
-                ]
+            "messages": [{
+                "role": "user",
+                "content": markdown
+            }]
         })
-        translate_markdown = response.content.strip()
+        translated_markdown = response["messages"][-1].content
         return {
-            "translate_markdown": translate_markdown
+            "markdown": markdown,
+            "translated_markdown": translated_markdown
         }
     else:
         raise ValueError("No markdown content available for translation.")
