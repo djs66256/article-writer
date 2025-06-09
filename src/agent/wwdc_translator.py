@@ -18,6 +18,7 @@ class State(BaseModel):
     """
     markdown: str | None = Field(None, description="The generated markdown content from the video.")
     translated_markdown: str | None = Field(None, description="The translated markdown content.")
+    rewrited_markdown: str | None = Field(None, description="The rewritten markdown content.")
 
 class Configuration(TypedDict):
     """Configurable parameters for the agent.
@@ -71,6 +72,32 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
     else:
         raise ValueError("No markdown content available for translation.")
 
+async def rewrite_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
+    """Rewrite markdown content."""
+    prompt = await get_prompt(AgentType.WRITER)
+    model = ChatOpenAI(
+        model=config['configurable']["model"],
+        base_url=config['configurable']["base_url"],
+        api_key=config['configurable']["api_key"]
+    )
+    agent = create_react_agent(model=model, tools=[], prompt=prompt)
+
+    if translated_markdown := state.translated_markdown:
+        response = await agent.ainvoke({
+            "messages": [{
+                "role": "user",
+                "content": translated_markdown
+            }]
+        })
+        rewrited_markdown = response["messages"][-1].content
+        return {
+            "markdown": state.markdown,
+            "translated_markdown": translated_markdown,
+            "rewrited_markdown": rewrited_markdown
+        }
+    else:
+        raise ValueError("No markdown content available for translation.")
+
 async def save_markdown(state: State, config: RunnableConfig):
     currentdir = os.path.dirname(os.path.abspath(__file__))
     year=config['configurable']["year"]
@@ -85,15 +112,20 @@ async def save_markdown(state: State, config: RunnableConfig):
     async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh.md'), 'w') as f:
         await f.write(state.translated_markdown)
 
+    async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh_rewrite.md'), 'w') as f:
+        await f.write(state.rewrited_markdown)
+
 
 graph = (
     StateGraph(State, config_schema=Configuration)
     .add_node(crawl_wwdc_markdown)
     .add_node(translate_markdown)
+    .add_node(rewrite_markdown)
     .add_node(save_markdown)
     .add_edge("__start__", "crawl_wwdc_markdown")
     .add_edge("crawl_wwdc_markdown", "translate_markdown")
-    .add_edge("translate_markdown", "save_markdown")
+    .add_edge("translate_markdown", "rewrite_markdown")
+    .add_edge("rewrite_markdown", "save_markdown")
     .add_edge("save_markdown", "__end__")
     .compile(name="WWDC Translator Graph")
 )
