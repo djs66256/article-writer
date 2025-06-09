@@ -1,6 +1,7 @@
 import asyncio
 import aiofiles
 import os
+from enum import Enum
 from typing import Any, Dict, TypedDict
 
 from langchain_core.runnables import RunnableConfig
@@ -19,6 +20,7 @@ class State(BaseModel):
     markdown: str | None = Field(None, description="The generated markdown content from the video.")
     translated_markdown: str | None = Field(None, description="The translated markdown content.")
     rewrited_markdown: str | None = Field(None, description="The rewritten markdown content.")
+    podcast_script: str | None = Field(None, description="The podcast script.")
 
 class Configuration(TypedDict):
     """Configurable parameters for the agent.
@@ -35,39 +37,51 @@ class Configuration(TypedDict):
     model: str
     api_key: str
 
+class CacheType(Enum):
+    ORIGINAL_MARKDOWN = "original_markdown"
+    TRANSLATED_MARKDOWN = "translated_markdown"
+    REWRITED_MARKDOWN = "rewrited_markdown"
+    PODCAST_SCRIPT = "podcast_script"
+
+    def file_postfix(self) -> str:
+        if self == CacheType.ORIGINAL_MARKDOWN:
+            return ".md"
+        elif self == CacheType.TRANSLATED_MARKDOWN:
+            return "_zh.md"
+        elif self == CacheType.REWRITED_MARKDOWN:
+            return "_zh_rewrite.md"
+        elif self == CacheType.PODCAST_SCRIPT:
+            return "_podcast.json"
+
 OUTPUT_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'output', 'wwdc')
-def _get_markdown_path(year: str, video_id: str) -> str:
-    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}.md')
 
-async def _get_markdown_cache(year: str, video_id: str) -> str | None:
-    markdown_path = _get_markdown_path(year, video_id)
-    if os.path.exists(markdown_path):
-        async with aiofiles.open(markdown_path, 'r') as f:
-            if markdown := await f.read():
-                return markdown
+async def get_cache(year: str, video_id: str, type: CacheType) -> str | None:
+    path = os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}{type.file_postfix()}')
+    if os.path.exists(path):
+        async with aiofiles.open(path, 'r') as f:
+            if content := await f.read():
+                return content
     return None
 
-def _get_translated_markdown_path(year: str, video_id: str) -> str:
-    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}_zh.md')
+async def save_cache(year: str, video_id: str, type: CacheType, content: str):
+    # ensure output dir exists
+    outputdir = os.path.join(OUTPUT_BASE_DIR, year)
+    if not os.path.exists(outputdir):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, os.makedirs, outputdir)
+    # save cache
+    path = os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}{type.file_postfix()}')
+    async with aiofiles.open(path, 'w') as f:
+        await f.write(content)
 
-async def _get_translated_markdown_cache(year: str, video_id: str) -> str | None:
-    markdown_path = _get_translated_markdown_path(year, video_id)
-    if os.path.exists(markdown_path):
-        async with aiofiles.open(markdown_path, 'r') as f:
-            if markdown := await f.read():
-                return markdown
-    return None
+def get_llm_model(config: Configuration) -> ChatOpenAI:
+    return ChatOpenAI(
+        model=config['configurable']["model"],
+        base_url=config['configurable']["base_url"],
+        api_key=config['configurable']["api_key"]
+    )
 
-def _get_rewrited_markdown_path(year: str, video_id: str) -> str:
-    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}_zh_rewrite.md')
-
-async def _get_rewrited_markdown_cache(year: str, video_id: str) -> str | None:
-    markdown_path = _get_rewrited_markdown_path(year, video_id)
-    if os.path.exists(markdown_path):
-        async with aiofiles.open(markdown_path, 'r') as f:
-            if markdown := await f.read():
-                return markdown
-    return None
+# Nodes:
 
 async def crawl_wwdc_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Generate markdown content from WWDC video data."""
@@ -75,39 +89,33 @@ async def crawl_wwdc_markdown(state: State, config: RunnableConfig) -> Dict[str,
     year=config['configurable']["year"]
     video_id=config['configurable']["video_id"]
     if config['configurable']["use_cache"]:
-        if markdown := await _get_markdown_cache(year, video_id):
+        if markdown := await get_cache(year, video_id, CacheType.ORIGINAL_MARKDOWN):
             return {
                 "markdown": markdown
             }
 
-    task = WWDCTask(
-        year=year, 
-        video_id=video_id
-        )
-    markdown = await asyncio.to_thread(lambda: task.run())
-    # markdown = await loop.run_in_executor(None, task.run)  # Clean up caches asynchronously
-    return {
-        "markdown": markdown
-    }
+    task = WWDCTask(year=year, video_id=video_id)
+    if markdown := await asyncio.to_thread(lambda: task.run()):
+        await save_cache(year, video_id, CacheType.ORIGINAL_MARKDOWN, markdown)
+        return {
+            "markdown": markdown
+        }
+    else:
+        raise ValueError("No markdown content available for translation.")
 
 async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Translate markdown content."""
     year=config['configurable']["year"]
     video_id=config['configurable']["video_id"]
     if config['configurable']["use_cache"]:
-        if translated_markdown := await _get_translated_markdown_cache(year, video_id):
+        if translated_markdown := await get_cache(year, video_id, CacheType.TRANSLATED_MARKDOWN):
             return {
-                "markdown": state.markdown,
+                **state.model_dump(),
                 "translated_markdown": translated_markdown
             }
 
     prompt = await get_prompt(AgentType.WWDC_TRANSLATOR)
-    model = ChatOpenAI(
-        model=config['configurable']["model"],
-        base_url=config['configurable']["base_url"],
-        api_key=config['configurable']["api_key"]
-    )
-
+    model = get_llm_model(config)
     agent = create_react_agent(model=model, tools=[], prompt=prompt)
     
     if markdown := state.markdown:
@@ -118,8 +126,9 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
             }]
         })
         translated_markdown = response["messages"][-1].content
+        await save_cache(year, video_id, CacheType.TRANSLATED_MARKDOWN, translated_markdown)
         return {
-            "markdown": markdown,
+            **state.model_dump(),
             "translated_markdown": translated_markdown
         }
     else:
@@ -127,12 +136,17 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
 
 async def rewrite_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Rewrite markdown content."""
+    year=config['configurable']["year"]
+    video_id=config['configurable']["video_id"]
+    if config['configurable']["use_cache"]:
+        if rewrited_markdown := await get_cache(year, video_id, CacheType.REWRITED_MARKDOWN):
+            return {
+                **state.model_dump(),
+                "rewrited_markdown": rewrited_markdown
+            }
+
     prompt = await get_prompt(AgentType.WRITER)
-    model = ChatOpenAI(
-        model=config['configurable']["model"],
-        base_url=config['configurable']["base_url"],
-        api_key=config['configurable']["api_key"]
-    )
+    model = get_llm_model(config)
     agent = create_react_agent(model=model, tools=[], prompt=prompt)
 
     if translated_markdown := state.translated_markdown:
@@ -143,30 +157,36 @@ async def rewrite_markdown(state: State, config: RunnableConfig) -> Dict[str, An
             }]
         })
         rewrited_markdown = response["messages"][-1].content
+        await save_cache(year, video_id, CacheType.REWRITED_MARKDOWN, rewrited_markdown)
         return {
-            "markdown": state.markdown,
-            "translated_markdown": translated_markdown,
+            **state.model_dump(),
             "rewrited_markdown": rewrited_markdown
         }
     else:
         raise ValueError("No markdown content available for translation.")
 
-async def save_markdown(state: State, config: RunnableConfig):
-    currentdir = os.path.dirname(os.path.abspath(__file__))
-    year=config['configurable']["year"]
-    video_id=config['configurable']["video_id"]
-    outputdir = os.path.join(currentdir, '..', '..', 'output', 'wwdc', year)
-    if not os.path.exists(outputdir):
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, os.makedirs, outputdir)
-    async with aiofiles.open(os.path.join(outputdir, f'{video_id}.md'), 'w') as f:
-        await f.write(state.markdown)
+async def write_podcast_script(state: State, config: RunnableConfig) -> Dict[str, Any]:
+    """Write podcast script."""
+    prompt = await get_prompt(AgentType.PODCAST_SCRIPT_WRITER)
+    model = get_llm_model(config)
+    agent = create_react_agent(model=model, tools=[], prompt=prompt)
 
-    async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh.md'), 'w') as f:
-        await f.write(state.translated_markdown)
+# async def save_markdown(state: State, config: RunnableConfig):
+#     currentdir = os.path.dirname(os.path.abspath(__file__))
+#     year=config['configurable']["year"]
+#     video_id=config['configurable']["video_id"]
+#     outputdir = os.path.join(currentdir, '..', '..', 'output', 'wwdc', year)
+#     if not os.path.exists(outputdir):
+#         loop = asyncio.get_running_loop()
+#         await loop.run_in_executor(None, os.makedirs, outputdir)
+#     async with aiofiles.open(os.path.join(outputdir, f'{video_id}.md'), 'w') as f:
+#         await f.write(state.markdown)
 
-    async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh_rewrite.md'), 'w') as f:
-        await f.write(state.rewrited_markdown)
+#     async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh.md'), 'w') as f:
+#         await f.write(state.translated_markdown)
+
+#     async with aiofiles.open(os.path.join(outputdir, f'{video_id}_zh_rewrite.md'), 'w') as f:
+#         await f.write(state.rewrited_markdown)
 
 
 graph = (
@@ -174,12 +194,9 @@ graph = (
     .add_node(crawl_wwdc_markdown)
     .add_node(translate_markdown)
     .add_node(rewrite_markdown)
-    .add_node(save_markdown)
     .add_edge("__start__", "crawl_wwdc_markdown")
     .add_edge("crawl_wwdc_markdown", "translate_markdown")
     .add_edge("translate_markdown", "rewrite_markdown")
-    .add_edge("rewrite_markdown", "save_markdown")
-    .add_edge("save_markdown", "__end__")
+    .add_edge("rewrite_markdown", "__end__")
     .compile(name="WWDC Translator Graph")
 )
-

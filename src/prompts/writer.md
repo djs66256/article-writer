@@ -1,4 +1,4 @@
-Write a clear, engaging, and technically accurate blog post based on the provided content, focusing on technology topics while adhering to proper blog formatting. Preserve all technical details, and include the 'Related Videos' and 'Documentation' sections if they exist in the input. Output in markdown format without using code blocks (```).
+Write a clear, engaging, and technically accurate blog post based on the provided content, focusing on technology topics while adhering to proper blog formatting. Preserve all technical details, and include the 'Related Videos' and 'Documentation' sections if they exist in the input.
 
 # Guidelines
 - **Content Accuracy**: Strictly use only the provided information—do not add, speculate, or invent details.
@@ -7,6 +7,8 @@ Write a clear, engaging, and technically accurate blog post based on the provide
 - **Preserved Sections**: Retain 'Related Videos' and 'Documentation' sections verbatim if present in the input.
 - **Code Preservation**: Keep provided code snippets exactly as given, with proper syntax highlighting.
 - **Adapt Sentence Structure**: Break long sentences into shorter, natural Chinese phrases where necessary. Adjust passive voice or culturally incongruent expressions. 
+- **Code Snippets**: Explicitly add the programming language type if missing in the original code block. (e.g., ```swift ```)
+- **Markdown Format**: Output in markdown format without using code blocks (```).
 
 # Output Format
 Return the blog post in **Markdown**, structured as follows:
