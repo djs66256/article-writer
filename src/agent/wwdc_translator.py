@@ -167,9 +167,32 @@ async def rewrite_markdown(state: State, config: RunnableConfig) -> Dict[str, An
 
 async def write_podcast_script(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Write podcast script."""
+    year=config['configurable']["year"]
+    video_id=config['configurable']["video_id"]
+    if config['configurable']["use_cache"]:
+        if podcast_script := await get_cache(year, video_id, CacheType.PODCAST_SCRIPT):
+            return {
+                **state.model_dump(),
+                "podcast_script": podcast_script
+            }
     prompt = await get_prompt(AgentType.PODCAST_SCRIPT_WRITER)
     model = get_llm_model(config)
     agent = create_react_agent(model=model, tools=[], prompt=prompt)
+    if markdown := state.translated_markdown:
+        response = await agent.ainvoke({
+            "messages": [{
+                "role": "user",
+                "content": markdown
+            }]
+        })
+        podcast_script = response["messages"][-1].content
+        await save_cache(year, video_id, CacheType.PODCAST_SCRIPT, podcast_script)
+        return {
+            **state.model_dump(),
+            "podcast_script": podcast_script
+        }
+    else:
+        raise ValueError("No markdown content available for translation.")
 
 # async def save_markdown(state: State, config: RunnableConfig):
 #     currentdir = os.path.dirname(os.path.abspath(__file__))
@@ -194,9 +217,11 @@ graph = (
     .add_node(crawl_wwdc_markdown)
     .add_node(translate_markdown)
     .add_node(rewrite_markdown)
+    .add_node(write_podcast_script)
     .add_edge("__start__", "crawl_wwdc_markdown")
     .add_edge("crawl_wwdc_markdown", "translate_markdown")
     .add_edge("translate_markdown", "rewrite_markdown")
-    .add_edge("rewrite_markdown", "__end__")
+    .add_edge("rewrite_markdown", "write_podcast_script")
+    .add_edge("write_podcast_script", "__end__")
     .compile(name="WWDC Translator Graph")
 )

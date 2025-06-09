@@ -8,6 +8,7 @@ Transform a video transcript into a podcast script with two speakers (male and f
   2. **Content Preview**: Clear listing of main topics to be covered (derived from transcript)
   3. **Main Discussion**: Dialogue breaking down each topic
   4. **Closing**: Natural conclusion referencing key points
+- **Markdown Format**: Output in markdown format without using code blocks (```).
 
 - **Role Distribution**:  
   - Alternate between Male and Female speakers logically
