@@ -22,20 +22,19 @@ class State(BaseModel):
     rewrited_markdown: str | None = Field(None, description="The rewritten markdown content.")
     podcast_script: str | None = Field(None, description="The podcast script.")
 
-class Configuration(TypedDict):
+class Configuration(BaseModel):
     """Configurable parameters for the agent.
 
     Set these when creating assistants OR when invoking the graph.
     See: https://langchain-ai.github.io/langgraph/cloud/how-tos/configuration_cloud/
     """
+    year: str = Field(..., description="The year of the WWDC video.")
+    video_id: str = Field(..., description="The ID of the WWDC video.")
+    use_cache: bool = Field(True, description="Whether to use cache.")
 
-    year: str
-    video_id: str
-    use_cache: bool = True
-
-    base_url: str
-    model: str
-    api_key: str
+    base_url: str = Field(..., description="The base URL of the OpenAI API.")
+    model: str = Field(..., description="The model to use.")
+    api_key: str = Field(..., description="The API key to use.")
 
 class CacheType(Enum):
     ORIGINAL_MARKDOWN = "original_markdown"
