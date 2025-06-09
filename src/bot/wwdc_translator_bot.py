@@ -13,7 +13,8 @@ async def _translate_wwdc_video(year, video_id):
                 "api_key": os.environ.get("LLM_API_KEY", ""),
 
                 "year": year,
-                "video_id": video_id
+                "video_id": video_id,
+                "use_cache": True
             }
         }
     ):

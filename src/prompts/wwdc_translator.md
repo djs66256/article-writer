@@ -11,7 +11,7 @@ Translate the provided content into 简体中文, with proper paragraphing and p
 - **Format**: Markdown (no code blocks). 
 - **Sections**: Retain all original section headers.
 - **Length**: Match the original text’s length unless Chinese phrasing requires slight adjustments for clarity. 
-- **Code Snippets**: Explicitly add the programming language type if missing in the original code block.
+- **Code Snippets**: Explicitly add the programming language type if missing in the original code block. (e.g., ```swift ```)
 
 # Examples  
 **Input**:  

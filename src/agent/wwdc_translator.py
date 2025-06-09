@@ -29,16 +29,60 @@ class Configuration(TypedDict):
 
     year: str
     video_id: str
+    use_cache: bool = True
 
     base_url: str
     model: str
     api_key: str
 
+OUTPUT_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'output', 'wwdc')
+def _get_markdown_path(year: str, video_id: str) -> str:
+    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}.md')
+
+async def _get_markdown_cache(year: str, video_id: str) -> str | None:
+    markdown_path = _get_markdown_path(year, video_id)
+    if os.path.exists(markdown_path):
+        async with aiofiles.open(markdown_path, 'r') as f:
+            if markdown := await f.read():
+                return markdown
+    return None
+
+def _get_translated_markdown_path(year: str, video_id: str) -> str:
+    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}_zh.md')
+
+async def _get_translated_markdown_cache(year: str, video_id: str) -> str | None:
+    markdown_path = _get_translated_markdown_path(year, video_id)
+    if os.path.exists(markdown_path):
+        async with aiofiles.open(markdown_path, 'r') as f:
+            if markdown := await f.read():
+                return markdown
+    return None
+
+def _get_rewrited_markdown_path(year: str, video_id: str) -> str:
+    return os.path.join(OUTPUT_BASE_DIR, year, f'{video_id}_zh_rewrite.md')
+
+async def _get_rewrited_markdown_cache(year: str, video_id: str) -> str | None:
+    markdown_path = _get_rewrited_markdown_path(year, video_id)
+    if os.path.exists(markdown_path):
+        async with aiofiles.open(markdown_path, 'r') as f:
+            if markdown := await f.read():
+                return markdown
+    return None
+
 async def crawl_wwdc_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Generate markdown content from WWDC video data."""
+
+    year=config['configurable']["year"]
+    video_id=config['configurable']["video_id"]
+    if config['configurable']["use_cache"]:
+        if markdown := await _get_markdown_cache(year, video_id):
+            return {
+                "markdown": markdown
+            }
+
     task = WWDCTask(
-        year=config['configurable']["year"], 
-        video_id=config['configurable']["video_id"]
+        year=year, 
+        video_id=video_id
         )
     markdown = await asyncio.to_thread(lambda: task.run())
     # markdown = await loop.run_in_executor(None, task.run)  # Clean up caches asynchronously
@@ -48,6 +92,15 @@ async def crawl_wwdc_markdown(state: State, config: RunnableConfig) -> Dict[str,
 
 async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, Any]:
     """Translate markdown content."""
+    year=config['configurable']["year"]
+    video_id=config['configurable']["video_id"]
+    if config['configurable']["use_cache"]:
+        if translated_markdown := await _get_translated_markdown_cache(year, video_id):
+            return {
+                "markdown": state.markdown,
+                "translated_markdown": translated_markdown
+            }
+
     prompt = await get_prompt(AgentType.WWDC_TRANSLATOR)
     model = ChatOpenAI(
         model=config['configurable']["model"],
