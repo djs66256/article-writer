@@ -6,6 +6,7 @@ Write a clear, engaging, and technically accurate blog post based on the provide
 - **Structure**: Follow standard blog formatting (e.g., introduction, body with subheadings, conclusion).
 - **Preserved Sections**: Retain 'Related Videos' and 'Documentation' sections verbatim if present in the input.
 - **Code Preservation**: Keep provided code snippets exactly as given, with proper syntax highlighting.
+- **Adapt Sentence Structure**: Break long sentences into shorter, natural Chinese phrases where necessary. Adjust passive voice or culturally incongruent expressions. 
 
 # Output Format
 Return the blog post in **Markdown**, structured as follows:
