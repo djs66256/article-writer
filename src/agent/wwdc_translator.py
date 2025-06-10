@@ -96,15 +96,9 @@ async def crawl_wwdc_markdown(state: State, config: RunnableConfig) -> Dict[str,
     task = WWDCTask(year=year, video_id=video_id)
     if markdown := await asyncio.to_thread(lambda: task.run()):
         await save_cache(year, video_id, CacheType.ORIGINAL_MARKDOWN, markdown)
-        if task.locale == 'cn':
-            return {
-                "markdown": markdown,
-                "translated_markdown": markdown
-            }
-        else:
-            return {
-                "markdown": markdown
-            }
+        return {
+            "markdown": markdown
+        }
     else:
         raise ValueError("No markdown content available for translation.")
 
@@ -112,10 +106,6 @@ async def translate_markdown(state: State, config: RunnableConfig) -> Dict[str, 
     """Translate markdown content."""
     year=config['configurable']["year"]
     video_id=config['configurable']["video_id"]
-    
-    if state.translated_markdown:
-        await save_cache(year, video_id, CacheType.TRANSLATED_MARKDOWN, state.translated_markdown)
-        return state.model_dump()
 
     if config['configurable']["use_cache"]:
         if translated_markdown := await get_cache(year, video_id, CacheType.TRANSLATED_MARKDOWN):

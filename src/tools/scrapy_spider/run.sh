@@ -1,1 +1,3 @@
 scrapy crawl wwdc -a vid=10217 -a wwdc=2024 --loglevel=ERROR -o output/wwdc/2024/10217.jsonl
+
+scrapy crawl wwdc_video_links -a wwdc=2025 --loglevel=ERROR -o output/wwdc/2025/videos.jsonl
