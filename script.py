@@ -35,7 +35,7 @@ if __name__ == "__main__":
     os.environ["LANGCHAIN_TRACING_V2"] = "false"
 
     if videos := craw_videos():
-        translate_wwdc_videos(videos)
+        translate_wwdc_videos(videos, max_concurrent=10)
 
     # translate_wwdc_videos("2025", [
     #     "102",
