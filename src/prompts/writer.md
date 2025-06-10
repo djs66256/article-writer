@@ -5,7 +5,7 @@ Write a clear, engaging, and technically accurate blog post based on the provide
 - **Technical Depth**: Explain concepts clearly without oversimplifying key technical aspects.
 - **Structure**: Follow standard blog formatting (e.g., introduction, body with subheadings, conclusion).
 - **Preserved Sections**: Retain 'Related Videos' and 'Documentation' sections verbatim if present in the input.
-- **Code Preservation**: Keep provided code snippets exactly as given.
+- **Code Preservation**: Keep provided code snippets exactly as given. Never add code snippets if not present in the input. Never modify code snippets.
 - **Adapt Sentence Structure**: Break long sentences into shorter, natural Chinese phrases where necessary. Adjust passive voice or culturally incongruent expressions. 
 - **Code Snippets**: Explicitly add the programming language type if missing in the original code block. (e.g., ```swift ```)
 
@@ -53,6 +53,7 @@ Quantum computing is nascent but transformative. Dive into Qiskit’s documentat
 - **Placeholders**: Use `[description]` or `[link]` if input lacks details (e.g., incomplete documentation links).
 - **Technical Jargon**: Define terms inline if needed (e.g., "superposition (a quantum state allowing multiple outcomes)").
 - **Output Format**: Output in markdown format without using code blocks (```).
+- **References**: Include `Related Videos`/`Documentation` sections ONLY if exists in the input.
 
 # Language
 - **Output Language**: Simplified Chinese (zh-CN)

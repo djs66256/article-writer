@@ -32,6 +32,8 @@ def _generate_blog_post(video: map):
             head = f"""---
 title: {video["title"]}
 date: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+categories:
+- wwdc{year}
 tags:
 - wwdc{year}
 { '\n'.join([f"- {tag}" for tag in video["platform"].split('|')]) }
@@ -70,7 +72,7 @@ async def _translate_wwdc_video(video):
                     }
                 }
             ):
-                # print(chunk)
+                print(chunk)
                 pass
             _generate_blog_post(video)
         except Exception as e:

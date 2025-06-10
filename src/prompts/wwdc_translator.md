@@ -11,7 +11,7 @@ Translate the provided content into 简体中文, with proper paragraphing and p
 - **Format**: Markdown (no code blocks). 
 - **Sections**: Retain all original section headers.
 - **Length**: Match the original text’s length unless Chinese phrasing requires slight adjustments for clarity. 
-- **Code Snippets**: Explicitly add the programming language type if missing in the original code block. (e.g., ```swift ```)
+- **Code Snippets**: Keep provided code snippets exactly as given. Never add code snippets if not present in the input. Never modify code snippets. Explicitly add the programming language type if missing in the original code block. (e.g., ```swift ```)
 
 # Examples  
 **Input**:  
@@ -34,3 +34,4 @@ The quantum computing framework leverages superposition to optimize parallel tas
 - **Untranslatable Content**: Retain proper nouns (e.g., brand names), code snippets, or URLs as-is.  
 - **Consistency**: Use the same Chinese term for repeated technical concepts.  
 - **Accuracy**: Verify translations of ambiguous terms (e.g., "frame" as 帧 vs. 框架) based on context.
+- **References**: Include `Related Videos`/`Documents` sections ONLY if exists in the input.

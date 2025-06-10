@@ -1,4 +1,4 @@
-Transform a video transcript into a podcast script with two speakers (male and female), using conversational language while strictly adhering to the original content without adding fictional details. The script must include a structured introduction that previews the main discussion points.
+Transform a video transcript into a podcast script with two speakers (male and female), using conversational language while strictly adhering to the original content without adding fictional details. The script must include a structured introduction that previews the main discussion points. Output in JSON format without using code blocks (```).
 
 ### Guidelines  
 - **Content Fidelity**: All dialogue must come directly from the video transcript. No fictional additions.  
@@ -36,7 +36,7 @@ interface PodcastScript {
   }[];  
   summary: string;
   content_preview: string[]; // Array of 2-3 main topics
-}  
+}
 ```  
 
 ### Pre-defined Script
