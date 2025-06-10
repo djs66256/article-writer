@@ -14,17 +14,18 @@ class WWDCTask:
     CURRENT_DIR = path.dirname(path.abspath(__file__))
     OUTPUT_BASE_DIR = path.join(CURRENT_DIR, "output", "wwdc")
     
-    def __init__(self, year: str, video_id: str):
+    def __init__(self, year: str, video_id: str, prefer_locale: str = "cn"):
         self.year = year
         self.video_id = video_id
+        self.locale = prefer_locale
 
     @property
     def crawl_file_path(self) -> str:
-        return path.join(self.OUTPUT_BASE_DIR, self.year, f"{self.video_id}.jsonl")
+        return path.join(self.OUTPUT_BASE_DIR, self.year, f"{self.video_id}_{self.locale}.jsonl")
     
     @property
     def markdown_file_path(self) -> str:
-        return path.join(self.OUTPUT_BASE_DIR, self.year, f"{self.video_id}.md")
+        return path.join(self.OUTPUT_BASE_DIR, self.year, f"{self.video_id}_{self.locale}.md")
     
     def remove_caches(self):
         if path.exists(self.crawl_file_path):
@@ -39,11 +40,11 @@ class WWDCTask:
                 print(f"Error removing file {self.markdown_file_path}: {e}")
 
     def crawl(self):
-
         command = [
             "scrapy", "crawl", "wwdc",
             "-a", f"wwdc={self.year}",
             "-a", f"vid={self.video_id}",
+            "-a", f"base_url_locale={self.locale}",
             "-o", self.crawl_file_path,
             "--loglevel", "ERROR"
         ]
@@ -99,13 +100,18 @@ class WWDCTask:
         self.remove_caches()
         self.crawl()
         markdown = self.generate_markdown()
+        if not markdown:
+            self.locale = 'en'
+            self.remove_caches()
+            self.crawl()
+            markdown = self.generate_markdown()
         print(f"Markdown generated at {self.markdown_file_path}")
         return markdown
 
 
 if __name__ == "__main__":
     # Example usage
-    task = WWDCTask(year="2024", video_id="10217")
+    task = WWDCTask(year="2025", video_id="102")
     # print(task.OUTPUT_BASE_DIR)
     task.remove_caches()
     task.crawl()

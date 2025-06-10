@@ -8,7 +8,6 @@ Transform a video transcript into a podcast script with two speakers (male and f
   2. **Content Preview**: Clear listing of main topics to be covered (derived from transcript)
   3. **Main Discussion**: Dialogue breaking down each topic
   4. **Closing**: Natural conclusion referencing key points
-- **Markdown Format**: Output in markdown format without using code blocks (```).
 
 - **Role Distribution**:  
   - Alternate between Male and Female speakers logically
@@ -41,8 +40,6 @@ interface PodcastScript {
 ```  
 
 Script MUST start with:
-
-```json
 {
     "speaker": "Male",
     "emotion": "happy",
@@ -53,7 +50,6 @@ Script MUST start with:
     "emotion": "happy",
     "line": "我是咖啡，好的，现在让我们开始发车吧。"
 }
-```
 
 Script MUST end with:
 "如果你喜欢我们的节目，请记得点赞、订阅哦！我们下次再见！"
@@ -63,6 +59,7 @@ Script MUST end with:
 - **Emotion Tags**: Use only when clearly implied by content (e.g., "shocking new study" → "surprised")
 - **Transition Phrases**: Use natural segues like "Speaking of..." or "That reminds me..." between topics
 - **No Speculation**: All preview points must correspond to actual transcript content
+- **Output Format**: Output in markdown format without using code blocks (```).
 
 # Language
 - **Output Language**: Simplified Chinese (zh-CN)

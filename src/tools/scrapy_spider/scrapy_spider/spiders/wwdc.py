@@ -4,6 +4,7 @@ import json
 class WWDCSpider(scrapy.Spider):
     name = 'wwdc'
     base_url = 'https://developer.apple.com/videos/play'
+    base_url_cn = 'https://developer.apple.com/cn/videos/play'
     
     async def start(self):
         wwdc_year = getattr(self, 'wwdc', 2025)
@@ -13,7 +14,10 @@ class WWDCSpider(scrapy.Spider):
             raise ValueError('Missing video ID')
         
         self.video_id = video_id
-        start_url = f'{self.base_url}/wwdc{wwdc_year}/{video_id}'
+        if getattr(self, 'base_url_locale', None) == 'cn':
+            start_url = f'{self.base_url_cn}/wwdc{wwdc_year}/{video_id}'
+        else:
+            start_url = f'{self.base_url}/wwdc{wwdc_year}/{video_id}'
         yield scrapy.Request(start_url, self.parse)
 
     def parse(self, response):
