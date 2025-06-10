@@ -36,9 +36,3 @@ if __name__ == "__main__":
 
     if videos := craw_videos():
         translate_wwdc_videos(videos, max_concurrent=10)
-
-    # translate_wwdc_videos("2025", [
-    #     "102",
-        # https://developer.apple.com/cn/videos/play/wwdc2025/252
-        # https://developer.apple.com/cn/videos/play/wwdc2025/265
-        # ])

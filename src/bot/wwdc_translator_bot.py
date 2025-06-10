@@ -91,4 +91,4 @@ async def translate_wwdc_videos_async(videos: list, max_concurrent=3):
 
 
 def translate_wwdc_videos(videos: list, max_concurrent=3):
-    asyncio.run(translate_wwdc_videos_async(videos), max_concurrent=max_concurrent)
+    asyncio.run(translate_wwdc_videos_async(videos, max_concurrent=max_concurrent))
