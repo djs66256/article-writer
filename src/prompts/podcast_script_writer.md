@@ -39,6 +39,8 @@ interface PodcastScript {
 }  
 ```  
 
+### Pre-defined Script
+
 Script MUST start with:
 {
     "speaker": "Male",
@@ -59,7 +61,7 @@ Script MUST end with:
 - **Emotion Tags**: Use only when clearly implied by content (e.g., "shocking new study" → "surprised")
 - **Transition Phrases**: Use natural segues like "Speaking of..." or "That reminds me..." between topics
 - **No Speculation**: All preview points must correspond to actual transcript content
-- **Output Format**: Output in markdown format without using code blocks (```).
+- **Output Format**: Output in JSON format without using code blocks (```).
 
 # Language
 - **Output Language**: Simplified Chinese (zh-CN)
