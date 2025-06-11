@@ -18,24 +18,14 @@ def _parse_video_url(video_url):
         return (year, video_id)
     raise ValueError("Invalid WWDC video URL format")
 
-def _generate_blog_post(video: map):
-    print(f"generating blog post ({video.get('url', None)})...")
-    if video_url := video.get('url', None):
-        year, video_id = _parse_video_url(video_url)
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        rewrite_path = os.path.join(base_path, '..', '..', f"output/wwdc/{year}/{video_id}_zh_rewrite.md")
-        output_path = os.path.join(base_path, '..', '..', f"output/blog/wwdc/")
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        blog_file_name = f'{datetime.datetime.now().strftime("%Y-%m-%d")}-wwdc{year}_{video_id}.md'
-        with open(os.path.join(output_path, blog_file_name), "w") as f:
-            head = f"""---
+def _get_blog_head_foot(video: map, category: str):
+    head = f"""---
 title: {video["title"]}
 date: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 categories:
-- wwdc{year}
+- {category}
 tags:
-- wwdc{year}
+- {category}
 { '\n'.join([f"- {tag}" for tag in video["platform"].split('|')]) }
 - {video["category"]}
 ---
@@ -44,10 +34,27 @@ tags:
 
 ![视频封面]({video["image"]})
 [视频地址]({video["url"]})
+> 此文章由AI生成，可能存在错误，如有问题，请联系[djs66256@163.com](djs66256@163.com)
 """
-            foot="""> 此文章由AI生成，可能存在错误，如有问题，请联系[djs66256@163.com](djs66256@163.com)"""
+    foot=""
+    return head, foot
+
+def _generate_blog_post(video: map):
+    print(f"generating blog post ({video.get('url', None)})...")
+    if video_url := video.get('url', None):
+        year, video_id = _parse_video_url(video_url)
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(base_path, '..', '..', f"output/blog/wwdc/")
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        blog_file_name = f'{datetime.datetime.now().strftime("%Y-%m-%d")}-wwdc{year}_{video_id}.md'
+        with open(os.path.join(output_path, blog_file_name), "w") as f:
+            head, foot = _get_blog_head_foot(video, f"wwdc{year}")
             f.write(head)
             f.write("\n")
+
+            rewrite_path = os.path.join(base_path, '..', '..', f"output/wwdc/{year}/{video_id}_zh_rewrite.md")
             with open(rewrite_path, "r") as ff:
                 f.write(ff.read())
             f.write("\n")
